@@ -1,0 +1,993 @@
+{% extends '_base.html' %} {% load static %}
+
+
+{% block nav %}
+  {% include '_nav_map.html' %}
+{% endblock %}
+
+{% block content  %}
+  {% include '_map.html' %}
+{% endblock content %}
+
+{% block js %}
+<script>
+
+// get paramas
+const urlParams = new URLSearchParams(window.location.search);
+const qLatitude = urlParams.get('lat')
+const qLongitude = urlParams.get('lng')
+const qzoom = urlParams.get('zoom')
+const qRadius = 500
+var map, featureList, boroughSearch = [], theaterSearch = [], meterSearch = [], valveSearch = [], pumpSearch = [];
+var urlApi = "/api/" + qLatitude + "/" + qLongitude + "/" + qRadius;
+
+$(window).resize(function() {
+  sizeLayerControl();
+});
+
+$(document).on("click", ".feature-row", function(e) {
+  $(document).off("mouseout", ".feature-row", clearHighlight);
+  sidebarClick(parseInt($(this).attr("id"), 10));
+});
+
+if ( !("ontouchstart" in window) ) {
+  $(document).on("mouseover", ".feature-row", function(e) {
+    highlight.clearLayers().addLayer(L.circleMarker([$(this).attr("lat"), $(this).attr("lng")], highlightStyle));
+  });
+}
+
+$(document).on("mouseout", ".feature-row", clearHighlight);
+
+
+$("#full-extent-btn").click(function() {
+  map.fitBounds(boroughs.getBounds());
+  $(".navbar-collapse.in").collapse("hide");
+  return false;
+});
+
+$("#legend-btn").click(function() {
+  $("#legendModal").modal("show");
+  $(".navbar-collapse.in").collapse("hide");
+  return false;
+});
+
+$("#login-btn").click(function() {
+  $("#loginModal").modal("show");
+  $(".navbar-collapse.in").collapse("hide");
+  return false;
+});
+
+$("#list-btn").click(function() {
+  animateSidebar();
+  return false;
+});
+
+$("#nav-btn").click(function() {
+  $(".navbar-collapse").collapse("toggle");
+  return false;
+});
+
+$("#sidebar-toggle-btn").click(function() {
+  animateSidebar();
+  return false;
+});
+
+$("#sidebar-hide-btn").click(function() {
+  animateSidebar();
+  return false;
+});
+
+function animateSidebar() {
+  $("#sidebar").animate({
+    width: "toggle"
+  }, 350, function() {
+    map.invalidateSize();
+  });
+}
+
+function sizeLayerControl() {
+  $(".leaflet-control-layers").css("max-height", $("#map").height() - 50);
+}
+
+function clearHighlight() {
+  highlight.clearLayers();
+}
+
+function sidebarClick(id) {
+  var layer = markerClusters.getLayer(id);
+  map.setView([layer.getLatLng().lat, layer.getLatLng().lng], 17);
+  layer.fire("click");
+  /* Hide sidebar and go to the map on small screens */
+  if (document.body.clientWidth <= 767) {
+    $("#sidebar").hide();
+    map.invalidateSize();
+  }
+}
+
+function syncSidebar() {
+  /* Empty sidebar features */
+  $("#feature-list tbody").empty();
+  /* Loop through pelanggan layer and add only features which are in the map bounds */
+  pelanggan.eachLayer(function (layer) {
+    if (map.hasLayer(pelangganLayer)) {
+      if (map.getBounds().contains(layer.getLatLng())) {
+        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-icon-green.png" %}"></td><td class="feature-name">' + layer.feature.properties.name + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      }
+    }
+  });
+  /* Loop through meters layer and add only features which are in the map bounds */
+  meters.eachLayer(function (layer) {
+    if (map.hasLayer(meterLayer)) {
+      if (map.getBounds().contains(layer.getLatLng())) {
+        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-meter-blue.png" %}"></td><td class="feature-name">' + layer.feature.properties.XTRID + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      }
+    }
+  });
+  /* Loop through meters layer and add only features which are in the map bounds */
+  valves.eachLayer(function (layer) {
+    if (map.hasLayer(valveLayer)) {
+      if (map.getBounds().contains(layer.getLatLng())) {
+        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-blue.png" %}"></td><td class="feature-name">' + layer.feature.properties.id_valve + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      }
+    }
+  });
+  /* Loop through meters layer and add only features which are in the map bounds */
+  pumps.eachLayer(function (layer) {
+    if (map.hasLayer(pumpLayer)) {
+      if (map.getBounds().contains(layer.getLatLng())) {
+        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-pump-red.png" %}"></td><td class="feature-name">' + layer.feature.properties.id_valve + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      }
+    }
+  });
+  /* Update list.js featureList */
+  featureList = new List("features", {
+    valueNames: ["feature-name"]
+  });
+  featureList.sort("feature-name", {
+    order: "asc"
+  });
+}
+
+/* Basemap Layers */
+var cartoLight = L.tileLayer("https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://cartodb.com/attributions">CartoDB</a>'
+});
+var usgsImagery = L.layerGroup([L.tileLayer("http://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}", {
+  maxZoom: 15,
+}), L.tileLayer.wms("http://raster.nationalmap.gov/arcgis/services/Orthoimagery/USGS_EROS_Ortho_SCALE/ImageServer/WMSServer?", {
+  minZoom: 16,
+  maxZoom: 19,
+  layers: "0",
+  format: 'image/jpeg',
+  transparent: true,
+  attribution: "Aerial Imagery courtesy USGS"
+})]);
+
+/* Overlay Layers */
+var highlight = L.geoJson(null);
+var highlightStyle = {
+  stroke: false,
+  fillColor: "#ca273b",
+  fillOpacity: 0.7,
+  radius: 10
+};
+
+/* custom marker */
+// https://github.com/pointhi/leaflet-color-markers
+var greenIcon = new L.Icon({
+  iconUrl: "{% static 'img/marker-icon-green.png' %}",
+  shadowUrl: "{% static 'img/marker-shadow.png' %}",
+  iconSize: [5, 10],
+  iconAnchor: [2, 10],
+  popupAnchor: [1, -34],
+  shadowSize: [10, 10]
+});
+
+var greenIconBig = new L.Icon({
+  iconUrl: "{% static 'img/marker-icon-green.png' %}",
+  shadowUrl: "{% static 'img/marker-shadow.png' %}",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [10, 10]
+});
+
+var redIcon = new L.Icon({
+  iconUrl: "{% static 'img/marker-icon-red.png' %}",
+  shadowUrl: "{% static 'img/marker-shadow.png' %}",
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+var meterBlueIcon = new L.Icon({
+    iconUrl: "{%static 'img/marker-meter-blue.png' %}",
+    shadowUrl: "{% static 'img/marker-shadow.png' %}",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [1, -34],
+    shadowSize: [60, 40]
+});
+
+var meterRedIcon = new L.Icon({
+    iconUrl: "{%static 'img/marker-meter-red.png' %}",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [1, -34],
+});
+
+var pumpBlueIcon = new L.Icon({
+    iconUrl: "{%static 'img/marker-pump-blue.png' %}",
+    shadowUrl: "{% static 'img/marker-shadow.png' %}",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [1, -34],
+    shadowSize: [60, 40]
+});
+
+var pumpRedIcon = new L.Icon({
+    iconUrl: "{%static 'img/marker-pump-red.png' %}",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [1, -34],
+});
+
+var valveBlueIcon = new L.Icon({
+    iconUrl: "{%static 'img/marker-valve-blue.png' %}",
+    shadowUrl: "{% static 'img/marker-shadow.png' %}",
+    iconSize: [20, 20],
+    iconAnchor: [20, 40],
+    popupAnchor: [1, -34],
+    shadowSize: [40, 40]
+});
+
+var valveRedIcon = new L.Icon({
+    iconUrl: "{%static 'img/marker-valve-red.png' %}",
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [1, -34],
+});
+
+// kelurahan
+var boroughs = L.geoJson(null, {
+  style: function (feature) {
+    return {
+        weight: 2,
+      color: "#f5deb3",
+      fill: false,
+      opacity: 1,
+      clickable: false
+    };
+  },
+  onEachFeature: function (feature, layer) {
+    boroughSearch.push({
+      name: layer.feature.properties.NAMA_KELUR,
+      source: "Boroughs",
+      id: L.stamp(layer),
+      bounds: layer.getBounds()
+    });
+  }
+});
+
+let data_boroughs = "{% static 'data/boroughs.geojson' %}";
+$.getJSON("{% url 'json-kelurahan' %}", function (data) {
+  boroughs.addData(data);
+});
+
+
+//============================================================================
+// Lines
+//============================================================================
+
+//Create a color dictionary based off of subway route_id
+var subwayColors = {"Distribusi":"#ff3135", "2":"#ff3135", "3":"ff3135", "4":"#009b2e",
+    "5":"#009b2e", "6":"#009b2e", "7":"#ce06cb", "A":"#fd9a00", "C":"#fd9a00",
+    "E":"#fd9a00", "SI":"#fd9a00","H":"#fd9a00", "Air":"#ffff00", "B":"#ffff00",
+    "D":"#ffff00", "Transmisi":"#ffff00", "M":"#ffff00", "G":"#9ace00", " ":"#6e6e6e",
+    "GS":"#6e6e6e", "J":"#976900", "Z":"#976900", "L":"#969696", "N":"#ffff00",
+    "Q":"#ffff00", "Dinas":"#ffff00" };
+
+var subwayLines = L.geoJson(null, {
+  style: function (feature) {
+      return {
+        color: subwayColors[feature.properties.kelas_pipa],
+        weight: 3,
+        opacity: 0.5
+      };
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      var content = "<table class='table table-striped table-bordered table-condensed'>" +
+          "<tr><th>Kelas Pipa</th><td>" + feature.properties.kelas_pipa + "</td></tr>" +
+          "<tr><th>Meterial</th><td>" + feature.properties.material_pipa + "</td></tr>" +
+              "<tr><th>Diameter</th><td>" + feature.properties.diameter_pipa + "</td></tr>" +
+               "<tr><th>Panjang (M)</th><td>" + feature.properties.pjg_pipa_geometris  +  "</td></tr>" +
+          "</table>";
+      layer.on({
+        click: function (e) {
+          $("#feature-title").html(feature.properties.pemilik);
+          $("#feature-info").html(content);
+          $("#featureModal").modal("show");
+
+        }
+      });
+    }
+    layer.on({
+      mouseover: function (e) {
+        var layer = e.target;
+        layer.setStyle({
+          weight: 3,
+          color: "#00FFFF",
+          opacity: 1
+        });
+        if (!L.Browser.ie && !L.Browser.opera) {
+          layer.bringToFront();
+        }
+      },
+      mouseout: function (e) {
+        subwayLines.resetStyle(e.target);
+      }
+    });
+  }
+});
+
+//let data_subwayLines = "{% static 'data/water_pipa_geometri.geojson' %}";
+//$.getJSON(data_subwayLines, function (data) {
+$.getJSON( urlApi + "/pipa.geojson", function (data) {
+  subwayLines.addData(data);
+  //map.addLayer(pelangganLayer);
+});
+
+
+//============================================================================
+// Pelanggan
+//============================================================================
+
+/* Single marker cluster layer to hold all clusters */
+var markerClusters = new L.MarkerClusterGroup({
+  spiderfyOnMaxZoom: true,
+  showCoverageOnHover: false,
+  zoomToBoundsOnClick: true,
+  disableClusteringAtZoom: 16
+});
+
+/* Empty layer placeholder to add to layer control for listening when to add/remove pelanggan to markerClusters layer */
+var colorIconPelanggan = {};
+var pelangganLayer = L.geoJson(null);
+var pelanggan = L.geoJson(null, {
+  pointToLayer: function (feature, latlng) {
+    if (!colorIconPelanggan.hasOwnProperty(feature.properties.kode_lokasi)){
+      colorIconPelanggan[feature.properties.kode_lokasi] = generatePastelColor();
+    }
+    return L.marker(latlng, {
+      icon: L.BeautifyIcon.icon({
+          icon: 'user',
+          borderColor: colorIconPelanggan[feature.properties.kode_lokasi],
+          textColor: colorIconPelanggan[feature.properties.kode_lokasi]
+        }),
+      title: feature.properties.name,
+      riseOnHover: true
+    });
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      //https://www.google.com/maps/search/?api=1&query=latitude,longitude
+      var gmap = "https://www.google.com/maps/search/?api=1&query=" + feature.geometry.coordinates[1] + "," + feature.geometry.coordinates[0];
+      var content = "<table class='table table-striped table-bordered table-condensed'>" +
+              "<tr><th>IDPEL</th><td>" + feature.properties.idpel + "</td></tr>" +
+          "<tr><th>Nama</th><td>" + feature.properties.name + "</td></tr>" +
+          "<tr><th>Alamat</th><td>" + feature.properties.address1 + " " + feature.properties.address2 + "</td></tr>" +
+          "<tr><th>Jenis Pelanggan</th><td>" + feature.properties.premise_type+ "</td></tr>" +
+          "<tr><th>Kode Lokasi</th><td>" + feature.properties.kode_lokasi + "</td></tr>" +
+              "<tr><th>Status</th><td>" + feature.properties.status + "</td></tr>" +
+              "<tr><th>Kode Golongan</th><td>" + feature.properties.kode_gol + "</td></tr>" +
+          "<tr><th>gmap</th><td>" + '<a href="' + gmap + '" target="_blank">lihat di Google Map</a>' + "</td></tr>" +
+          "</table>";
+      layer.on({
+        click: function (e) {
+          $("#feature-title").html(feature.properties.name);
+          $("#feature-info").html(content);
+          $("#featureModal").find('.modal-footer').html(
+            `<button id="updateAsset" class="btn btn-primary" data-asset-id="${feature.properties.id}" data-asset="premise" onclick="updateAsset(this)">Edit</button>` +
+            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>'
+          );
+          $("#featureModal").modal("show");
+          highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
+          highlight.addLayer(L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {icon: redIcon}))
+        }
+      });
+      // menambahkan marker user
+      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-icon-green.png" %}"></td><td class="feature-name">' + layer.feature.properties.NAMA + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      theaterSearch.push({
+        name: layer.feature.properties.name,
+        address: layer.feature.properties.address1,
+        source: "Theaters",
+        id: L.stamp(layer),
+        lat: layer.feature.geometry.coordinates[1],
+        lng: layer.feature.geometry.coordinates[0]
+      });
+    }
+  }
+});
+
+$.getJSON( urlApi + "/premise.geojson", function (data) {
+  pelanggan.addData(data);
+  //map.addLayer(pelangganLayer);
+});
+
+//============================================================================
+// Meter
+//============================================================================
+
+/* Empty layer placeholder to add to layer control for listening when to add/remove meters to markerClusters layer */
+var meterLayer = L.geoJson(null);
+var meters = L.geoJson(null, {
+  pointToLayer: function (feature, latlng) {
+    return L.marker(latlng, {
+      icon: meterBlueIcon,
+      title: feature.properties.id_meter_induk,
+      riseOnHover: true
+    });
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>ID METER INDUK</th><td>" + feature.properties.id_meter_induk + "</td></tr>" + "<table>";
+      layer.on({
+        click: function (e) {
+          $("#feature-title").html(feature.properties.id_meter_induk);
+          $("#feature-info").html(content);
+          $("#featureModal").modal("show");
+          highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
+          highlight.addLayer(L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
+              icon: meterRedIcon
+          }));
+        }
+      });
+      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-meter-blue.png"%}"></td><td class="feature-name">' + layer.feature.properties.id_meter_induk + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      meterSearch.push({
+        name: layer.feature.properties.id_meter_induk,
+        address: layer.feature.properties.RWO_ID,
+        source: "Meters",
+        id: L.stamp(layer),
+        lat: layer.feature.geometry.coordinates[1],
+        lng: layer.feature.geometry.coordinates[0]
+      });
+    }
+  }
+});
+
+$.getJSON(urlApi + "/meterinduk.geojson", function (data) {
+  meters.addData(data);
+});
+
+
+//============================================================================
+// Pump
+//============================================================================
+
+/* Empty layer placeholder to add to layer control for listening when to add/remove meters to markerClusters layer */
+var pumpLayer = L.geoJson(null);
+var pumps = L.geoJson(null, {
+  pointToLayer: function (feature, latlng) {
+    return L.marker(latlng, {
+      icon: pumpBlueIcon,
+      title: feature.properties.id_pompa,
+      riseOnHover: true
+    });
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>ID POMPA</th><td>" + feature.properties.id_pompa + "</td></tr>" + "<table>";
+      layer.on({
+        click: function (e) {
+          $("#feature-title").html(feature.properties.id_pompa);
+          $("#feature-info").html(content);
+          $("#featureModal").modal("show");
+          highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
+          highlight.addLayer(L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
+              icon: pumpRedIcon
+          }));
+        }
+      });
+      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-pump-blue.png"%}"></td><td class="feature-name">' + layer.feature.properties.id_pompa + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      pumpSearch.push({
+        name: layer.feature.properties.id_pompa,
+        address: layer.feature.properties.RWO_ID,
+        source: "Pumps",
+        id: L.stamp(layer),
+        lat: layer.feature.geometry.coordinates[1],
+        lng: layer.feature.geometry.coordinates[0]
+      });
+    }
+  }
+});
+
+$.getJSON(urlApi + "/pump.geojson", function (data) {
+  pumps.addData(data);
+});
+
+//============================================================================
+// Valve
+//============================================================================
+
+/* Empty layer placeholder to add to layer control for listening when to add/remove meters to markerClusters layer */
+var valveLayer = L.geoJson(null);
+var valves = L.geoJson(null, {
+  pointToLayer: function (feature, latlng) {
+    return L.marker(latlng, {
+      icon: valveBlueIcon,
+      title: feature.properties.id_valve,
+      riseOnHover: true
+    });
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      var content = "<table class='table table-striped table-bordered table-condensed'>" +
+              "<tr><th>ID Valve</th><td>" + feature.properties.id_valve +
+              "<tr><th>Ukuran Valve</th><td>" + feature.properties.ukuran_valve +
+              "</td></tr>" + "<table>";
+      layer.on({
+        click: function (e) {
+          $("#feature-title").html(feature.properties.id_valve);
+          $("#feature-info").html(content);
+          $("#featureModal").find('.modal-footer').html(
+            `<button id="updateAsset" class="btn btn-primary" data-asset-id="${feature.properties.id}" data-asset="valve" onclick="updateAsset(this)">Edit</button>` +
+            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>'
+          );
+          $("#featureModal").modal("show");
+          highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
+          highlight.addLayer(L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
+              icon: valveRedIcon
+          }));
+        }
+      });
+      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-blue.png"%}"></td><td class="feature-name">' + layer.feature.properties.XTRID + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      valveSearch.push({
+        name: layer.feature.properties.id_valve,
+        address: layer.feature.properties.sys_id,
+        source: "Valves",
+        id: L.stamp(layer),
+        lat: layer.feature.geometry.coordinates[1],
+        lng: layer.feature.geometry.coordinates[0]
+      });
+    }
+  }
+});
+
+
+$.getJSON(urlApi + "/airvalve.geojson", function (data) {
+  valves.addData(data);
+});
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+map = L.map("map", {
+  zoom: qzoom || 14,
+  center: qLatitude && qLongitude ? [qLatitude, qLongitude] : [-1.2585, 116.87],
+  layers: [cartoLight, boroughs, markerClusters, highlight],
+  zoomControl: false,
+  attributionControl: false
+});
+
+/* Layer control listeners that allow for a single markerClusters layer */
+map.on("overlayadd", function(e) {
+  if (e.layer === pelangganLayer) {
+    markerClusters.addLayer(pelanggan);
+    syncSidebar();
+  }
+  if (e.layer === meterLayer) {
+    markerClusters.addLayer(meters);
+    syncSidebar();
+  }
+  if (e.layer === pumpLayer) {
+    markerClusters.addLayer(pumps);
+    syncSidebar();
+  }
+  if (e.layer === valveLayer) {
+    markerClusters.addLayer(valves);
+    syncSidebar();
+  }
+});
+
+map.on("overlayremove", function(e) {
+  if (e.layer === pelangganLayer) {
+    markerClusters.removeLayer(pelanggan);
+    syncSidebar();
+  }
+  if (e.layer === meterLayer) {
+    markerClusters.removeLayer(meters);
+    syncSidebar();
+  }
+  if (e.layer === pumpLayer) {
+    markerClusters.removeLayer(pumps);
+    syncSidebar();
+  }
+  if (e.layer === valveLayer) {
+    markerClusters.removeLayer(valves);
+    syncSidebar();
+  }
+});
+
+/* Filter sidebar feature list to only show features in current map bounds */
+map.on("moveend", function (e) {
+  syncSidebar();
+});
+
+/* Clear feature highlight when map is clicked */
+map.on("click", function(e) {
+  highlight.clearLayers();
+});
+
+/* Attribution control */
+function updateAttribution(e) {
+  $.each(map._layers, function(index, layer) {
+    if (layer.getAttribution) {
+      $("#attribution").html((layer.getAttribution()));
+    }
+  });
+}
+map.on("layeradd", updateAttribution);
+map.on("layerremove", updateAttribution);
+
+var attributionControl = L.control({
+  position: "bottomright"
+});
+attributionControl.onAdd = function (map) {
+  var div = L.DomUtil.create("div", "leaflet-control-attribution");
+  div.innerHTML = "<span class='hidden-xs'><a href='http://bryanmcbride.com'>Bootleaf</a> | </span><a href='#' onclick='$(\"#attributionModal\").modal(\"show\"); return false;'>Attribution</a>";
+  return div;
+};
+map.addControl(attributionControl);
+
+var zoomControl = L.control.zoom({
+  position: "bottomright"
+}).addTo(map);
+
+/* GPS enabled geolocation control set to follow the user's location */
+var locateControl = L.control.locate({
+  position: "bottomright",
+  drawCircle: true,
+  follow: true,
+  setView: true,
+  keepCurrentZoomLevel: true,
+  markerStyle: {
+    weight: 1,
+    opacity: 0.5,
+    fillOpacity: 0.5
+  },
+  circleStyle: {
+    weight: 1,
+    clickable: false
+  },
+  icon: "fa fa-location-arrow",
+  metric: false,
+  strings: {
+    title: "My location",
+    popup: "You are within {distance} {unit} from this point",
+    outsideMapBoundsMsg: "You seem located outside the boundaries of the map"
+  },
+  locateOptions: {
+    maxZoom: 18,
+    watch: true,
+    enableHighAccuracy: true,
+    maximumAge: 10000,
+    timeout: 10000
+  }
+}).addTo(map);
+
+/* Larger screens get expanded layer control and visible sidebar */
+if (document.body.clientWidth <= 767) {
+  var isCollapsed = true;
+} else {
+  var isCollapsed = false;
+}
+
+var baseLayers = {
+  "Street Map": cartoLight,
+  "Aerial Imagery": usgsImagery
+};
+
+var groupedOverlays = {
+  "Points of Interest": {
+    "<img src={% static 'img/marker-icon-green.png' %} width='16' height='18'>&nbsp;Pelanggan": pelangganLayer,
+    "<img src={% static 'img/marker-meter-blue.png' %} width='16' height='18'>&nbsp;Meter": meterLayer,
+    "<img src={% static 'img/marker-pump-blue.png' %} width='16' height='18'>&nbsp;Pump": pumpLayer,
+    "<img src={% static 'img/marker-valve-blue.png' %} width='16' height='18'>&nbsp;Valve": valveLayer,
+  },
+  "Polygon": {
+    "Pipa": subwayLines
+  }
+};
+
+var layerControl = L.control.groupedLayers(baseLayers, groupedOverlays, {
+  collapsed: isCollapsed
+}).addTo(map);
+
+/* Highlight search box text on click */
+$("#searchbox").click(function () {
+  $(this).select();
+});
+
+/* Prevent hitting enter from refreshing the page */
+$("#searchbox").keypress(function (e) {
+  if (e.which == 13) {
+    e.preventDefault();
+  }
+});
+
+$("#featureModal").on("hidden.bs.modal", function (e) {
+  $(document).on("mouseout", ".feature-row", clearHighlight);
+});
+
+/* Typeahead search functionality */
+$(document).one("ajaxStop", function () {
+  $("#loading").hide();
+  sizeLayerControl();
+  /* Fit map to boroughs bounds */
+  {#map.fitBounds(boroughs.getBounds());#}
+  featureList = new List("features", {valueNames: ["feature-name"]});
+  featureList.sort("feature-name", {order:"asc"});
+
+  var boroughsBH = new Bloodhound({
+    name: "Boroughs",
+    datumTokenizer: function (d) {
+      return Bloodhound.tokenizers.whitespace(d.name);
+    },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    local: boroughSearch,
+    limit: 10
+  });
+
+  var pelangganBH = new Bloodhound({
+    name: "Theaters",
+    datumTokenizer: function (d) {
+      return Bloodhound.tokenizers.whitespace(d.name);
+    },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    local: theaterSearch,
+    limit: 10
+  });
+
+  var metersBH = new Bloodhound({
+    name: "Meters",
+    datumTokenizer: function (d) {
+      return Bloodhound.tokenizers.whitespace(d.id_meter_induk);
+    },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    local: meterSearch,
+    limit: 10
+  });
+
+  var geonamesBH = new Bloodhound({
+    name: "GeoNames",
+    datumTokenizer: function (d) {
+      return Bloodhound.tokenizers.whitespace(d.name);
+    },
+    queryTokenizer: Bloodhound.tokenizers.whitespace,
+    remote: {
+      url: "http://api.geonames.org/searchJSON?username=bootleaf&featureClass=P&maxRows=5&countryCode=US&name_startsWith=%QUERY",
+      filter: function (data) {
+        return $.map(data.geonames, function (result) {
+          return {
+            name: result.name + ", " + result.adminCode1,
+            lat: result.lat,
+            lng: result.lng,
+            source: "GeoNames"
+          };
+        });
+      },
+      ajax: {
+        beforeSend: function (jqXhr, settings) {
+          settings.url += "&east=" + map.getBounds().getEast() + "&west=" + map.getBounds().getWest() + "&north=" + map.getBounds().getNorth() + "&south=" + map.getBounds().getSouth();
+          $("#searchicon").removeClass("fa-search").addClass("fa-refresh fa-spin");
+        },
+        complete: function (jqXHR, status) {
+          $('#searchicon').removeClass("fa-refresh fa-spin").addClass("fa-search");
+        }
+      }
+    },
+    limit: 10
+  });
+  boroughsBH.initialize();
+  pelangganBH.initialize();
+  metersBH.initialize();
+  geonamesBH.initialize();
+
+  /* instantiate the typeahead UI */
+  $("#searchbox").typeahead({
+    minLength: 3,
+    highlight: true,
+    hint: false
+  }, {
+    name: "Boroughs",
+    displayKey: "name",
+    source: boroughsBH.ttAdapter(),
+    templates: {
+      header: "<h4 class='typeahead-header'>Boroughs</h4>"
+    }
+  }, {
+    name: "Theaters",
+    displayKey: "name",
+    source: pelangganBH.ttAdapter(),
+    templates: {
+      header: "<h4 class='typeahead-header'><img src='{% static 'img/marker-icon-gren.png' %}' width='24' height='28'>&nbsp;Pelanggan</h4>",
+      suggestion: Handlebars.compile(["{{name}}<br>&nbsp;<small>{{address}}</small>"].join(""))
+    }
+  }, {
+    name: "Meters",
+    displayKey: "name",
+    source: metersBH.ttAdapter(),
+    templates: {
+      header: "<h4 class='typeahead-header'><img src='{% static 'img/marker-meter-blue.png' %}' width='24' height='28'>&nbsp;Meters</h4>",
+      suggestion: Handlebars.compile(["{{name}}<br>&nbsp;<small>{{address}}</small>"].join(""))
+    }
+  }, {
+    name: "GeoNames",
+    displayKey: "name",
+    source: geonamesBH.ttAdapter(),
+    templates: {
+      header: "<h4 class='typeahead-header'><img src='{% static 'img/globe.png' %}' width='25' height='25'>&nbsp;GeoNames</h4>"
+    }
+  }).on("typeahead:selected", function (obj, datum) {
+    if (datum.source === "Boroughs") {
+      map.fitBounds(datum.bounds);
+    }
+    if (datum.source === "Theaters") {
+      if (!map.hasLayer(pelangganLayer)) {
+        map.addLayer(pelangganLayer);
+      }
+      map.setView([datum.lat, datum.lng], 17);
+      if (map._layers[datum.id]) {
+        map._layers[datum.id].fire("click");
+      }
+    }
+    if (datum.source === "Meters") {
+      if (!map.hasLayer(meterLayer)) {
+        map.addLayer(meterLayer);
+      }
+      map.setView([datum.lat, datum.lng], 17);
+      if (map._layers[datum.id]) {
+        map._layers[datum.id].fire("click");
+      }
+    }
+    if (datum.source === "GeoNames") {
+      map.setView([datum.lat, datum.lng], 14);
+    }
+    if ($(".navbar-collapse").height() > 50) {
+      $(".navbar-collapse").collapse("hide");
+    }
+  }).on("typeahead:opened", function () {
+    $(".navbar-collapse.in").css("max-height", $(document).height() - $(".navbar-header").height());
+    $(".navbar-collapse.in").css("height", $(document).height() - $(".navbar-header").height());
+  }).on("typeahead:closed", function () {
+    $(".navbar-collapse.in").css("max-height", "");
+    $(".navbar-collapse.in").css("height", "");
+  });
+  $(".twitter-typeahead").css("position", "static");
+  $(".twitter-typeahead").css("display", "block");
+});
+
+// Leaflet patch to make layer control scrollable on touch browsers
+var container = $(".leaflet-control-layers")[0];
+if (!L.Browser.touch) {
+  L.DomEvent
+  .disableClickPropagation(container)
+  .disableScrollPropagation(container);
+} else {
+  L.DomEvent.disableClickPropagation(container);
+}
+
+
+// get lat lon when click on map
+map.on('dblclick', function(e) {
+  if ($("#render-new-data").is(":checked")) {
+
+    alert('ganti data');
+    console.log("Lat, Lon : " + e.latlng.lat + ", " + e.latlng.lng);
+    window.location = "/?lat="+ e.latlng.lat +"&lng=" + e.latlng.lng +"&radius=" + qRadius + "&zoom=17"
+    e.stopPropagation();
+
+  }
+})
+if (typeof(Number.prototype.toRad) === "undefined") {
+	  Number.prototype.toRad = function() {
+	    return this * Math.PI / 180;
+	  }
+	}
+function getTileURL(lat, lon, zoom) {
+    var xtile = parseInt(Math.floor( (lon + 180) / 360 * (1<<zoom) ));
+    var ytile = parseInt(Math.floor( (1 - Math.log(Math.tan(lat.toRad()) + 1 / Math.cos(lat.toRad())) / Math.PI) / 2 * (1<<zoom) ));
+    return "" + zoom + "/" + xtile + "/" + ytile;
+}
+
+
+// TODO
+// query from the user location if location is on boundaries
+// or just set the default to the a point
+// when dob
+
+
+// TODO
+// resize icon when zoom
+// var layer = '';//define the layer that contains the markers
+// map.on('zoomend', function() {
+//     var currentZoom = map.getZoom();
+//
+//     //Update X and Y based on zoom level
+//     var x= 50; //Update x
+//     var y= 50; //Update Y
+//     var LeafIcon = L.Icon.extend({
+//         options: {
+//             iconSize:     [x, y] // Change icon size according to zoom level
+//         }
+//     });
+//     layer.setIcon(LeafIcon);
+// });
+
+
+// Checkbox layer control untuk new render data
+L.Control.RemoveAll = L.Control.extend({
+    options:
+    {
+        position: 'bottomright',
+    },
+    onAdd: function (map) {
+        var controlDiv = L.DomUtil.create('div', 'leaflet-draw-toolbar leaflet-bar');
+        var controlUI = L.DomUtil.create('input', 'leaflet-render-new-data', controlDiv);
+        controlUI.title = 'Remove All Polygons';
+        controlUI.type = 'checkbox';
+        controlUI.id = 'render-new-data';
+        L.DomEvent.addListener(controlUI, 'click', () => {
+              console.log('checked');
+              console.log($('#render-new-data').is(':checked'))
+        })
+        return controlDiv;
+    }
+});
+var removeAllControl = new L.Control.RemoveAll();
+map.addControl(removeAllControl);
+
+// resize icon ketika zoom
+{#map.on('zoomend', function() {#}
+{##}
+{#    var zoom = map.getZoom()#}
+{#    if (zoom > 17) {#}
+{#      pelanggan.setIcon(greenIconBig);#}
+{#    } else {#}
+{#      pelanggan.setIcon(greenIcon);#}
+{#    }#}
+{#});#}
+
+
+function generatePastelColor(){
+  // https://stackoverflow.com/a/67391860/10268058
+  let R = Math.floor((Math.random() * 127) + 127);
+  let G = Math.floor((Math.random() * 127) + 127);
+  let B = Math.floor((Math.random() * 127) + 127);
+
+  let rgb = (R << 16) + (G << 8) + B;
+  return `#${rgb.toString(16)}`;
+}
+
+// update asset
+function updateAsset(that){
+  console.log('klik');
+  console.log($(that).attr('data-asset'));
+  $.ajax({
+    url: `/api/${$(that).attr('data-asset')}/${$(that).attr('data-asset-id')}`,
+    success: function (data){
+      $('#updateModal').find('#properties').html(data);
+      $('#updateModal').find('form').attr('action', this.url);
+      $('#updateModal').find('#next').val(window.location.href);
+      $('#featureModal').modal('hide');
+      $('#updateModal').modal('show');
+    }
+  })
+}
+
+
+
+</script>
+{% endblock %}

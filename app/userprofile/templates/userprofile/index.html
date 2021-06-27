@@ -1,0 +1,38 @@
+{% extends 'layouts/base.html' %}
+{% load static %}
+
+{% block head %}
+ {# Load the tag library #}
+    {% load bootstrap4 %}
+
+    {# Load CSS and JavaScript #}
+    {% bootstrap_css %}
+    {% bootstrap_javascript jquery='full' %}
+   <link rel="stylesheet" type="text/css" href="{% static 'css/index.css' %}">
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h2>All user</h2>            
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Phone</th>
+          <th>Address</th>
+        </tr>
+      </thead>
+      <tbody>
+         
+          {% for user in users %}
+          <tr>
+            <td><a href="{% url 'user-detail' username=user.username %}">{{ user.first_name }} {{ user.last_name }}</a></td>
+            <td>{{ user.profile.phone }}</td>
+            <td>{{ user.profile.address }}</td>
+          </tr>
+          {% endfor %}
+                       
+      </tbody>
+    </table>
+  </div>
+{% endblock %}

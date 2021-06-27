@@ -1,0 +1,99 @@
+{% load static %}
+
+<nav id="sidebar" class="sidebar-wrapper">
+  <div class="sidebar-content">
+    <div class="sidebar-brand">
+      <a href="#">GIS PDAM Balikpapan</a>
+      <div id="close-sidebar">
+        <i class="fas fa-times"></i>
+      </div>
+    </div>
+    <div class="sidebar-header">
+      <div class="user-pic">
+        <img class="img-responsive img-rounded" src="{% static 'img/icon.png' %}" alt="User picture">
+      </div>
+      <div class="user-info">
+        <span class="user-name">
+          <strong>Alfiansyah</strong>
+        </span>
+        <span class="user-role">Administrator</span>
+        <span class="user-status">
+          <i class="fa fa-circle"></i>
+          <span>Online</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- sidebar-search  -->
+    <div class="sidebar-search">
+      <div>
+        <div class="input-group">
+          <input type="text" class="form-control search-menu" placeholder="Cari Pelanggan...">
+          <div class="input-group-append">
+            <span class="input-group-text">
+              <i class="fa fa-search" aria-hidden="true"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+      <!-- sidebar-search  -->
+    <!-- sidebar-header  -->
+    <div class="sidebar-menu">
+      <ul>
+        <li class="header-menu">
+          <span>General</span>
+        </li>
+        <li>
+          <a href="/admin/">
+            <i class="fa fa-lock"></i>
+            <span>Halaman Admin</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class="fa fa-tachometer-alt"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class="fa fa-users"></i>
+            <span>Pelanggan</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class="fa fa-wrench"></i>
+            <span>Pipa</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class="fa fa-book"></i>
+            <span>Asset</span>
+          </a>
+        </li>
+        <li>
+          <a href="#">
+            <i class="fa fa-map"></i>
+            <span>Map</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+
+    <!-- sidebar-menu  -->
+  </div>
+  <!-- sidebar-content  -->
+  <div class="sidebar-footer">
+    <a href="#">
+      <i class="fa fa-bell"></i>
+      <span class="badge badge-pill badge-warning notification">3</span>
+    </a>
+    <a href="#">
+      <i class="fas fa-sign-out-alt"></i>
+    </a>
+  </div>
+</nav>

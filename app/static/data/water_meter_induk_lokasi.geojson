@@ -1,0 +1,29 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          116.82459302891895,
+          -1.2378991572088731
+        ]
+      },
+      "properties": {
+        "XTRID": "1919156",
+        "DIAMETER": 0.0,
+        "ID_METER_I": "",
+        "JENIS_METE": "Flow Meter",
+        "KELAS_METE": "",
+        "MEREK_METE": "",
+        "STATUS": "",
+        "TANGGAL_BO": null,
+        "TANGGAL_PA": null,
+        "RWO_ID": "1113697-710889709-1919159",
+        "ORI": 233.0439816615,
+        "SYMBOLOGIE": "0"
+      }
+    }
+  ]
+}

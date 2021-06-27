@@ -1,0 +1,46 @@
+<!-- templates/home.html -->
+{% extends '_base.html' %}
+{% load static %}
+
+{% block title %}Home{% endblock title %}
+
+{% block head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+   crossorigin=""/>
+
+  <style>
+
+    #mapid {
+        height: 100%;
+        width: 100%;
+    }
+  </style>
+
+{% endblock  %}
+
+{% block content %}
+  <div class="container-map">
+    <div id="mapid"></div>
+  </div>
+
+
+
+{% endblock content %}
+
+{% block js %}
+  <!-- Make sure you put this AFTER Leaflet's CSS -->
+ <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+   integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+   crossorigin=""></script>
+
+  <script>
+    var mymap = L.map('mapid', {preferCanvas: true}).setView([-1.2585, 116.87], 15);
+    mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+	  L.tileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: 'Map data &copy; ' + mapLink,
+          maxZoom: 18,
+	  }).addTo(mymap);
+
+  </script>
+{% endblock %}
