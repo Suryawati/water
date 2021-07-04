@@ -13,7 +13,7 @@ from djgeojson.views import GeoJSONLayerView
 import json
 
 # local
-from land.models import Kelurahan
+from land.models import Kelurahan, Persil
 from water.models import AirValve, FireHydrant, MeterInduk, Pipa, PMP, Premise, Pump, Sipon, TitikBocor, Valve, Washout
 
 def pelanggan_dummy(request):
@@ -109,11 +109,18 @@ class AirValveLayer(GeoJSONLayerView, LatLonRadMixin):
             geom__distance_lt=(point, Distance(m=meter_rad)))
         return context
 
+class ValveLayer(GeoJSONLayerView, LatLonRadMixin):
+    def get_queryset(self, **kwargs):
+        point, meter_rad = self.get_lat_lon_rad(**kwargs)
+        context = Valve.objects.filter(
+            geom__distance_lt=(point, Distance(m=meter_rad)))
+        return context
+
 
 class FireHidrantLayer(GeoJSONLayerView, LatLonRadMixin):
     def get_queryset(self, **kwargs):
         point, meter_rad = self.get_lat_lon_rad(**kwargs)
-        context = FireHidrantLayer.objects.filter(
+        context = FireHidrant.objects.filter(
             geom__distance_lt=(point, Distance(m=meter_rad)))
         return context
 
@@ -130,6 +137,13 @@ class PMPLayer(GeoJSONLayerView, LatLonRadMixin):
     def get_queryset(self, **kwargs):
         point, meter_rad = self.get_lat_lon_rad(**kwargs)
         context = PMP.objects.filter(
+            geom__distance_lt=(point, Distance(m=meter_rad)))
+        return context
+
+class PersilLayer(GeoJSONLayerView, LatLonRadMixin):
+    def get_queryset(self, **kwargs):
+        point, meter_rad = self.get_lat_lon_rad(**kwargs)
+        context = Persil.objects.filter(
             geom__distance_lt=(point, Distance(m=meter_rad)))
         return context
 

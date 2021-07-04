@@ -4,7 +4,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import serializers, status
 
-from api.serializers import PremiseSerializer, ValveSerializer, AirValveSerializer
+from api.serializers import (PremiseSerializer,
+                            ValveSerializer,
+                             AirValveSerializer,
+                             PipaSerializer,
+                             PumpSerializer,
+                             PersilSerializer)
 
 from water.models import (AirValve,
                           FireHydrant,
@@ -18,6 +23,7 @@ from water.models import (AirValve,
                           Valve,
                           Washout)
 
+from land.models import Persil
 
 class UpdateMixin():
     """
@@ -62,3 +68,15 @@ class AirValveUpdate(BaseUpdate, UpdateMixin):
 class ValveUpdate(BaseUpdate, UpdateMixin):
     model = Valve
     asset_serializer = ValveSerializer
+
+class PipaUpdate(BaseUpdate, UpdateMixin):
+    model = Pipa
+    asset_serializer = PipaSerializer
+
+class PumpUpdate(BaseUpdate, UpdateMixin):
+    model = Pump
+    asset_serializer = PumpSerializer
+
+class PersilUpdate(BaseUpdate, UpdateMixin):
+    model = Persil
+    asset_serializer = PersilSerializer

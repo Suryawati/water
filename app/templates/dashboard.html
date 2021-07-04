@@ -96,6 +96,56 @@
       </div>
     </div>
 
+ <div class="row">
+
+      <div class="col-12">
+        <div class="card card-chart">
+          <div class="card-header ">
+            <div class="row">
+              <div class="col-sm-6 text-left">
+                <h5 class="card-category">Total</h5>
+                <h2 class="card-title">Panjang Pipa</h2>
+              </div>
+              <div class="col-sm-6">
+                <div class="btn-group btn-group-toggle float-right" data-toggle="buttons">
+                  <label class="btn btn-sm btn-primary btn-simple active" id="3">
+                    <input type="radio" name="options" checked>
+                    <span class="d-none d-sm-block d-md-block d-lg-block d-xl-block">Material</span>
+                    <span class="d-block d-sm-none">
+                      <i class="tim-icons icon-single-02"></i>
+                    </span>
+                  </label>
+                  <label class="btn btn-sm btn-primary btn-simple" id="4">
+                    <input type="radio" class="d-none d-sm-none" name="options">
+                    <span class="d-none d-sm-block d-md-block d-lg-block d-xl-block">Kelas</span>
+                    <span class="d-block d-sm-none">
+                      <i class="tim-icons icon-gift-2"></i>
+                    </span>
+                  </label>
+                  <label class="btn btn-sm btn-primary btn-simple" id="5">
+                    <input type="radio" class="d-none" name="options">
+                    <span class="d-none d-sm-block d-md-block d-lg-block d-xl-block">Status</span>
+                    <span class="d-block d-sm-none">
+                      <i class="tim-icons icon-tap-02"></i>
+                    </span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-area">
+              <!--<canvas id="lineChartExample"></canvas>--->
+              <canvas id="chartBig2" ></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+ </div>
+
+
+
+
 
 {% endblock content %}
 
@@ -112,10 +162,13 @@
     var meter =  ({{ meter|safe }})
     var pump =  ({{ pump|safe }})
     var avalve =  ({{ avalve|safe }})
+    var data7 =  ({{ materialpipa|safe }})
+    var data8 =  ({{ kelaspipa|safe }})
+    var data9 =  ({{ statuspipa|safe }})
 
-      console.log(data2[1].premise_type);
-      console.log(data1[1].status__count);
-      console.log(data1.length);
+      console.log(data7[1].material_pipa);
+      console.log(data7[1].total);
+      console.log(data7.length);
 
       var chart_labels=[];
       var chart_data=[]
@@ -158,6 +211,31 @@
          avalve_data[i] = avalve[i].total;
       }
 
+
+      var chart_label3=[];
+      var chart_data3=[]
+      for (let i=0; i < data7.length; i++){
+         chart_label3[i] = data7[i].material_pipa ;
+         chart_data3[i] = data7[i].total;
+      }
+
+      var chart_label4=[];
+      var chart_data4=[]
+      for (let i=0; i < data8.length; i++){
+         chart_label4[i] = data8[i].kelas_pipa ;
+         chart_data4[i] = data8[i].total;
+      }
+
+      var chart_label5=[];
+      var chart_data5=[]
+      for (let i=0; i < data9.length; i++){
+         chart_label5[i] = data9[i].status ;
+         chart_data5[i] = data9[i].total;
+      }
+
+
+
+
       console.log(meter_label);
       console.log(meter_data);
 
@@ -168,6 +246,7 @@
 
 
       demo.initDashboardPageCharts();
+      //demo.initDocChart();
 
     });
   </script>

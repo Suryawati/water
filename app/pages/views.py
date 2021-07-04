@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
-from water.models import Premise, MeterInduk, Pump, AirValve
-from django.db.models import Count
+from water.models import Premise, MeterInduk, Pump, AirValve, Pipa
+from django.db.models import Count, Sum
 import json
 
 
@@ -39,12 +39,24 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         data5 = json.dumps(list(query5))
         context['pump'] = data5
 
-        # Valve
+        # Air Valve
         query6 = AirValve.objects.all().values('merek').annotate(total=(Count('*')))
         data6 = json.dumps(list(query6))
         context['avalve'] = data6
 
+        # Pipa
+        query7 = Pipa.objects.all().values('material_pipa').annotate(total=(Sum('pjg_pipa_geometris')))
+        # data = Premise.objects.all()
+        data7 = json.dumps(list(query7))
+        context['materialpipa'] = data7
 
+        query8 = Pipa.objects.all().values('kelas_pipa').annotate(total=(Sum('pjg_pipa_geometris')))
+        data8 = json.dumps(list(query8))
+        context['kelaspipa'] = data8
+
+        query9 = Pipa.objects.all().values('status').annotate(total=(Sum('pjg_pipa_geometris')))
+        data9 = json.dumps(list(query9))
+        context['statuspipa'] = data9
 
         return context
 

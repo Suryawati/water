@@ -12,12 +12,12 @@ from water.models import (AirValve,
                           Valve,
                           Washout)
 
-
+from land.models import Persil
 
 class PremiseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Premise
-        fields = ['name', 'kode_lokasi']
+        fields = ['name', 'idpel', 'kode_gol', 'saran']
 
 
 class AirValveSerializer(serializers.ModelSerializer):
@@ -30,3 +30,20 @@ class ValveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Valve
         fields = ['id_valve', 'status_koneksi']
+
+class PersilSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Persil
+        fields = ['nomor_pelanggan', 'nomor_persil', 'keterangan']
+
+class PumpSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pump
+        fields = ['id_pompa']
+
+class PipaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pipa
+        fields = ['id_pipa', 'pemilik', 'kelas_pipa', 'status', 'diameter_pipa', 'material_pipa']
+
+

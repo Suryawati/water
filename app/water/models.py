@@ -4,13 +4,13 @@ from django.contrib.gis.db import models
 class AirValve(models.Model):
     id_valve = models.CharField(
         help_text=('data id_valve berupa string yang menunjukan identitas '
-                  'AirValve..... (contoh)'),
+                  'Contoh AV 101'),
         max_length=255,
         null=True, )
 
     status_koneksi = models.CharField(
-        help_text=('ACTIVE jika AirValve tersambung, '
-                   'PENDING jika sudah terdaftar dan menunggu proses.'),
+        help_text=('isi OPEN atau'
+                   'CLOSE'),
         max_length=255,
         null=True)
 

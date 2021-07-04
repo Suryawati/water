@@ -87,11 +87,11 @@ demo = {
     gradientFill.addColorStop(1, "rgba(249, 99, 59, 0.40)");
 
     myChart = new Chart(ctx, {
-      type: 'line',
+      type: 'bar',
       responsive: true,
       data: {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-          //labels: labels,
+        //labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        labels: chart_label3,
         datasets: [{
           label: "Active Users",
           borderColor: "#f96332",
@@ -104,13 +104,46 @@ demo = {
           fill: true,
           backgroundColor: gradientFill,
           borderWidth: 2,
-          data: [542, 480, 430, 550, 530, 453, 380, 434, 568, 610, 700, 630]
-          //data:data
+          //data: [542, 480, 430, 550, 530, 453, 380, 434, 568, 610, 700, 630]
+          data:chart_data3
         }]
       },
       options: gradientChartOptionsConfiguration
+      //options: gradientBarChartConfiguration
     });
+
+    console.log(data);
+
+    var myChartData = new Chart(ctx);
+    $("#3").click(function() {
+      var data = myChartData.config.data;
+      data.datasets[0].data = chart_data3;
+      data.labels = chart_label3;
+      data.data = chart_data3;
+      myChartData.update();
+    });
+
+    $("#4").click(function() {
+      var data = myChartData.config.data;
+      data.datasets[0].data = chart_data4;
+      data.labels = chart_label4;
+      data.data = chart_data4;
+      myChartData.update();
+    });
+
+    $("#5").click(function() {
+      var data = myChartData.config.data;
+      data.datasets[0].data = chart_data5;
+      data.labels = chart_label5;
+      data.data = chart_data5;
+      myChartData.update();
+    });
+
+
+
   },
+
+
 
   initDashboardPageCharts: function() {
 
@@ -468,28 +501,87 @@ demo = {
       options: gradientBarChartConfiguration
     };
 
-
-    var myChartData = new Chart(ctx, config);
+    var myChartData1 = new Chart(ctx, config);
     $("#0").click(function() {
-      var data = myChartData.config.data;
-      data.datasets[0].data = chart_data;
-      data.labels = chart_labels;
-      data.data = chart_data;
-      myChartData.update();
+      var data1 = myChartData1.config.data;
+      data1.datasets[0].data = chart_data;
+      data1.labels = chart_labels;
+      data1.data = chart_data;
+      myChartData1.update();
     });
     $("#1").click(function() {
-      var data = myChartData.config.data;
-      data.datasets[0].data = chart_data1;
-      data.labels = chart_label1;
-      data.data = chart_data1;
-      myChartData.update();
+      var data1 = myChartData1.config.data;
+      data1.datasets[0].data = chart_data1;
+      data1.labels = chart_label1;
+      data1.data = chart_data1;
+      myChartData1.update();
     });
 
     $("#2").click(function() {
+      var data1 = myChartData1.config.data;
+      data1.datasets[0].data = chart_data2;
+      data1.labels = chart_label2;
+      data1.data = chart_data2;
+      myChartData1.update();
+    });
+
+
+    var ctx = document.getElementById("chartBig2").getContext('2d');
+
+
+    var gradientStroke = ctx.createLinearGradient(0, 230, 0, 50);
+
+    gradientStroke.addColorStop(1, 'rgba(72,72,176,0.1)');
+    gradientStroke.addColorStop(0.4, 'rgba(72,72,176,0.0)');
+    gradientStroke.addColorStop(0, 'rgba(119,52,169,0)'); //purple colors
+    var config = {
+      type: 'bar',
+      data: {
+        labels: chart_label3,
+        datasets: [{
+          label: "Total Panjang (m)",
+          fill: true,
+          backgroundColor: gradientStroke,
+          borderColor: '#d346b1',
+          borderWidth: 2,
+          borderDash: [],
+          borderDashOffset: 0.0,
+          pointBackgroundColor: '#d346b1',
+          pointBorderColor: 'rgba(255,255,255,0)',
+          pointHoverBackgroundColor: '#d346b1',
+          pointBorderWidth: 20,
+          pointHoverRadius: 4,
+          pointHoverBorderWidth: 15,
+          pointRadius: 4,
+          data: chart_data3,
+        }]
+      },
+      //options: gradientChartOptionsConfigurationWithTooltipPurple
+      options: gradientBarChartConfiguration
+    };
+
+
+    var myChartData = new Chart(ctx, config);
+    $("#3").click(function() {
       var data = myChartData.config.data;
-      data.datasets[0].data = chart_data2;
-      data.labels = chart_label2;
-      data.data = chart_data2;
+      data.datasets[0].data = chart_data3;
+      data.labels = chart_label3;
+      data.data = chart_data3;
+      myChartData.update();
+    });
+    $("#4").click(function() {
+      var data = myChartData.config.data;
+      data.datasets[0].data = chart_data4;
+      data.labels = chart_label4;
+      data.data = chart_data4;
+      myChartData.update();
+    });
+
+    $("#5").click(function() {
+      var data = myChartData.config.data;
+      data.datasets[0].data = chart_data5;
+      data.labels = chart_label5;
+      data.data = chart_data5;
       myChartData.update();
     });
 

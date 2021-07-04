@@ -18,7 +18,8 @@ const qLatitude = urlParams.get('lat')
 const qLongitude = urlParams.get('lng')
 const qzoom = urlParams.get('zoom')
 const qRadius = 500
-var map, featureList, boroughSearch = [], theaterSearch = [], meterSearch = [], valveSearch = [], pumpSearch = [];
+var map, featureList, boroughSearch = [], theaterSearch = [], persilSearch=[];
+var meterSearch = [], valveSearch = [], airvalveSearch = [], pumpSearch = [];
 var urlApi = "/api/" + qLatitude + "/" + qLongitude + "/" + qRadius;
 
 $(window).resize(function() {
@@ -123,6 +124,14 @@ function syncSidebar() {
       }
     }
   });
+  /* Loop through persils layer and add only features which are in the map bounds */
+  //persils.eachLayer(function (layer) {
+  //  if (map.hasLayer(persilLayer)) {
+  //    if (map.getBounds().contains(layer.getLatLng())) {
+  //      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-meter-blue.png" %}"></td><td class="feature-name">' + layer.feature.properties.nomor_pelanggan + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+  //    }
+  //  }
+  //});
   /* Loop through meters layer and add only features which are in the map bounds */
   valves.eachLayer(function (layer) {
     if (map.hasLayer(valveLayer)) {
@@ -132,13 +141,23 @@ function syncSidebar() {
     }
   });
   /* Loop through meters layer and add only features which are in the map bounds */
-  pumps.eachLayer(function (layer) {
-    if (map.hasLayer(pumpLayer)) {
+  airvalves.eachLayer(function (layer) {
+    if (map.hasLayer(airvalveLayer)) {
       if (map.getBounds().contains(layer.getLatLng())) {
-        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-pump-red.png" %}"></td><td class="feature-name">' + layer.feature.properties.id_valve + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-yellow.png" %}"></td><td class="feature-name">' + layer.feature.properties.id_valve + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
       }
     }
   });
+
+  /* Loop through meters layer and add only features which are in the map bounds */
+  pumps.eachLayer(function (layer) {
+    if (map.hasLayer(pumpLayer)) {
+      if (map.getBounds().contains(layer.getLatLng())) {
+        $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-pump-red.png" %}"></td><td class="feature-name">' + layer.feature.properties.id_pompa + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      }
+    }
+  });
+
   /* Update list.js featureList */
   featureList = new List("features", {
     valueNames: ["feature-name"]
@@ -237,16 +256,22 @@ var pumpRedIcon = new L.Icon({
 var valveBlueIcon = new L.Icon({
     iconUrl: "{%static 'img/marker-valve-blue.png' %}",
     shadowUrl: "{% static 'img/marker-shadow.png' %}",
-    iconSize: [20, 20],
-    iconAnchor: [20, 40],
+    iconSize: [25, 25],
+    iconAnchor: [15, 20],
     popupAnchor: [1, -34],
     shadowSize: [40, 40]
 });
 
 var valveRedIcon = new L.Icon({
     iconUrl: "{%static 'img/marker-valve-red.png' %}",
-    iconSize: [40, 40],
-    iconAnchor: [20, 40],
+    iconSize: [25, 25],
+    iconAnchor: [15, 20],
+    popupAnchor: [1, -34],
+});
+var valveYellowIcon = new L.Icon({
+    iconUrl: "{%static 'img/marker-valve-yellow.png' %}",
+    iconSize: [25, 25],
+    iconAnchor: [15, 20],
     popupAnchor: [1, -34],
 });
 
@@ -299,16 +324,22 @@ var subwayLines = L.geoJson(null, {
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
+      var gmap = "https://www.google.com/maps/search/?api=1&query=" + feature.geometry.coordinates[1] + "," + feature.geometry.coordinates[0];
       var content = "<table class='table table-striped table-bordered table-condensed'>" +
           "<tr><th>Kelas Pipa</th><td>" + feature.properties.kelas_pipa + "</td></tr>" +
           "<tr><th>Meterial</th><td>" + feature.properties.material_pipa + "</td></tr>" +
               "<tr><th>Diameter</th><td>" + feature.properties.diameter_pipa + "</td></tr>" +
                "<tr><th>Panjang (M)</th><td>" + feature.properties.pjg_pipa_geometris  +  "</td></tr>" +
+                "<tr><th>gmap</th><td>" + '<a href="' + gmap + '" target="_blank">lihat di Google Map</a>' + "</td></tr>" +
           "</table>";
       layer.on({
         click: function (e) {
           $("#feature-title").html(feature.properties.pemilik);
           $("#feature-info").html(content);
+          $("#featureModal").find('.modal-footer').html(
+            `<button id="updateAsset" class="btn btn-primary" data-asset-id="${feature.properties.id}" data-asset="pipa" onclick="updateAsset(this)">Edit</button>` +
+            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>'
+          );
           $("#featureModal").modal("show");
 
         }
@@ -333,11 +364,9 @@ var subwayLines = L.geoJson(null, {
   }
 });
 
-//let data_subwayLines = "{% static 'data/water_pipa_geometri.geojson' %}";
-//$.getJSON(data_subwayLines, function (data) {
 $.getJSON( urlApi + "/pipa.geojson", function (data) {
   subwayLines.addData(data);
-  //map.addLayer(pelangganLayer);
+
 });
 
 
@@ -383,6 +412,7 @@ var pelanggan = L.geoJson(null, {
           "<tr><th>Kode Lokasi</th><td>" + feature.properties.kode_lokasi + "</td></tr>" +
               "<tr><th>Status</th><td>" + feature.properties.status + "</td></tr>" +
               "<tr><th>Kode Golongan</th><td>" + feature.properties.kode_gol + "</td></tr>" +
+              "<tr><th>Saran</th><td>" + feature.properties.saran + "</td></tr>" +
           "<tr><th>gmap</th><td>" + '<a href="' + gmap + '" target="_blank">lihat di Google Map</a>' + "</td></tr>" +
           "</table>";
       layer.on({
@@ -414,7 +444,7 @@ var pelanggan = L.geoJson(null, {
 
 $.getJSON( urlApi + "/premise.geojson", function (data) {
   pelanggan.addData(data);
-  //map.addLayer(pelangganLayer);
+  map.addLayer(pelangganLayer);
 });
 
 //============================================================================
@@ -433,6 +463,7 @@ var meters = L.geoJson(null, {
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
+      var gmap = "https://www.google.com/maps/search/?api=1&query=" + feature.geometry.coordinates[1] + "," + feature.geometry.coordinates[0];
       var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>ID METER INDUK</th><td>" + feature.properties.id_meter_induk + "</td></tr>" + "<table>";
       layer.on({
         click: function (e) {
@@ -462,6 +493,81 @@ $.getJSON(urlApi + "/meterinduk.geojson", function (data) {
   meters.addData(data);
 });
 
+//============================================================================
+// Persil
+//============================================================================
+var persilLayer = L.geoJson(null);
+var persils = L.geoJson(null, {
+  style: function (feature) {
+      return {
+        color: "#f5deb3",
+        weight: 3,
+        opacity: 0.5
+      };
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      var gmap = "https://www.google.com/maps/search/?api=1&query=" + feature.geometry.coordinates[1] + "," + feature.geometry.coordinates[0];
+      var content = "<table class='table table-striped table-bordered table-condensed'>" +
+          "<tr><th>Nomor Pelanggan</th><td>" + feature.properties.nomor_pelanggan + "</td></tr>" +
+          "<tr><th>Nama</th><td>" + feature.properties.keterangan + "</td></tr>" +
+              "<tr><th>Nomor Rumah</th><td>" + feature.properties.nomor_persil + "</td></tr>" +
+          "<tr><th>gmap</th><td>" + '<a href="' + gmap + '" target="_blank">lihat di Google Map</a>' + "</td></tr>" +
+          "</table>";
+      layer.on({
+        click: function (e) {
+          $("#feature-title").html(feature.properties.nomor_pelanggan);
+          $("#feature-info").html(content);
+          $("#featureModal").find('.modal-footer').html(
+            `<button id="updateAsset" class="btn btn-primary" data-asset-id="${feature.properties.id}" data-asset="persil" onclick="updateAsset(this)">Edit</button>` +
+            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>'
+          );
+          $("#featureModal").modal("show");
+
+        }
+      });
+       //$("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-blue.png"%}"></td><td class="feature-name">' + layer.feature.properties.nomor_pelanggan + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      persilSearch.push({
+      name: layer.feature.properties.nomor_pelanggan,
+      source: "Persils",
+      id: L.stamp(layer),
+      bounds: layer.getBounds()
+    });
+
+    }
+    layer.on({
+      mouseover: function (e) {
+        var layer = e.target;
+        layer.setStyle({
+          weight: 3,
+          color: "#00FFFF",
+          opacity: 1
+        });
+        if (!L.Browser.ie && !L.Browser.opera) {
+          layer.bringToFront();
+        }
+      },
+      mouseout: function (e) {
+        persils.resetStyle(e.target);
+      }
+    });
+
+    //$("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-blue.png"%}"></td><td class="feature-name">' + layer.feature.properties.nomor_pelanggan + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+    //  persilSearch.push({
+    //    name: layer.feature.properties.nomor_pelanggan,
+    //    address: layer.feature.properties.sys_id,
+    //    source: "Persils",
+    //    id: L.stamp(layer),
+    //    lat: layer.feature.geometry.coordinates[1],
+    //    lng: layer.feature.geometry.coordinates[0]
+    //  });
+  }
+});
+
+$.getJSON( urlApi + "/persil.geojson", function (data) {
+  persils.addData(data);
+
+});
 
 //============================================================================
 // Pump
@@ -479,11 +585,18 @@ var pumps = L.geoJson(null, {
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
-      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>ID POMPA</th><td>" + feature.properties.id_pompa + "</td></tr>" + "<table>";
+      var gmap = "https://www.google.com/maps/search/?api=1&query=" + feature.geometry.coordinates[1] + "," + feature.geometry.coordinates[0];
+      var content = "<table class='table table-striped table-bordered table-condensed'>" + "<tr><th>ID POMPA</th><td>" + feature.properties.id_pompa + "</td></tr>" +
+                     "<tr><th>gmap</th><td>" + '<a href="' + gmap + '" target="_blank">lihat di Google Map</a>' + "</td></tr>" +
+                     "<table>";
       layer.on({
         click: function (e) {
           $("#feature-title").html(feature.properties.id_pompa);
           $("#feature-info").html(content);
+          $("#featureModal").find('.modal-footer').html(
+            `<button id="updateAsset" class="btn btn-primary" data-asset-id="${feature.properties.id}" data-asset="pump" onclick="updateAsset(this)">Edit</button>` +
+            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>'
+          );
           $("#featureModal").modal("show");
           highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
           highlight.addLayer(L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
@@ -524,10 +637,13 @@ var valves = L.geoJson(null, {
   },
   onEachFeature: function (feature, layer) {
     if (feature.properties) {
+      var gmap = "https://www.google.com/maps/search/?api=1&query=" + feature.geometry.coordinates[1] + "," + feature.geometry.coordinates[0];
       var content = "<table class='table table-striped table-bordered table-condensed'>" +
               "<tr><th>ID Valve</th><td>" + feature.properties.id_valve +
               "<tr><th>Ukuran Valve</th><td>" + feature.properties.ukuran_valve +
-              "</td></tr>" + "<table>";
+              "</td></tr>" +
+               "<tr><th>gmap</th><td>" + '<a href="' + gmap + '" target="_blank">lihat di Google Map</a>' + "</td></tr>" +
+          "<table>";
       layer.on({
         click: function (e) {
           $("#feature-title").html(feature.properties.id_valve);
@@ -543,7 +659,7 @@ var valves = L.geoJson(null, {
           }));
         }
       });
-      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-blue.png"%}"></td><td class="feature-name">' + layer.feature.properties.XTRID + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-blue.png"%}"></td><td class="feature-name">' + layer.feature.properties.id_valve + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
       valveSearch.push({
         name: layer.feature.properties.id_valve,
         address: layer.feature.properties.sys_id,
@@ -557,11 +673,70 @@ var valves = L.geoJson(null, {
 });
 
 
-$.getJSON(urlApi + "/airvalve.geojson", function (data) {
+$.getJSON(urlApi + "/valve.geojson", function (data) {
   valves.addData(data);
 });
 
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//============================================================================
+// airValve
+//============================================================================
+
+/* Empty layer placeholder to add to layer control for listening when to add/remove meters to markerClusters layer */
+var airvalveLayer = L.geoJson(null);
+var airvalves = L.geoJson(null, {
+  pointToLayer: function (feature, latlng) {
+    return L.marker(latlng, {
+      icon: valveYellowIcon,
+      title: feature.properties.id_valve,
+      riseOnHover: true
+    });
+  },
+  onEachFeature: function (feature, layer) {
+    if (feature.properties) {
+      var gmap = "https://www.google.com/maps/search/?api=1&query=" + feature.geometry.coordinates[1] + "," + feature.geometry.coordinates[0];
+      var content = "<table class='table table-striped table-bordered table-condensed'>" +
+              "<tr><th>ID Valve</th><td>" + feature.properties.id_valve +
+              "<tr><th>Ukuran Valve</th><td>" + feature.properties.ukuran_valve +
+              "</td></tr>" +
+               "<tr><th>gmap</th><td>" + '<a href="' + gmap + '" target="_blank">lihat di Google Map</a>' + "</td></tr>" +
+          "<table>";
+      layer.on({
+        click: function (e) {
+          $("#feature-title").html(feature.properties.id_valve);
+          $("#feature-info").html(content);
+          $("#featureModal").find('.modal-footer').html(
+            `<button id="updateAsset" class="btn btn-primary" data-asset-id="${feature.properties.id}" data-asset="airvalve" onclick="updateAsset(this)">Edit</button>` +
+            '<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>'
+          );
+          $("#featureModal").modal("show");
+          highlight.clearLayers().addLayer(L.circleMarker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], highlightStyle));
+          highlight.addLayer(L.marker([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], {
+              icon: valveRedIcon
+          }));
+        }
+      });
+      $("#feature-list tbody").append('<tr class="feature-row" id="' + L.stamp(layer) + '" lat="' + layer.getLatLng().lat + '" lng="' + layer.getLatLng().lng + '"><td style="vertical-align: middle;"><img width="16" height="18" src="{% static "img/marker-valve-yellow.png"%}"></td><td class="feature-name">' + layer.feature.properties.id_valve + '</td><td style="vertical-align: middle;"><i class="fa fa-chevron-right pull-right"></i></td></tr>');
+      airvalveSearch.push({
+        name: layer.feature.properties.id_valve,
+        address: layer.feature.properties.sys_id,
+        source: "AirValves",
+        id: L.stamp(layer),
+        lat: layer.feature.geometry.coordinates[1],
+        lng: layer.feature.geometry.coordinates[0]
+      });
+    }
+  }
+});
+
+
+$.getJSON(urlApi + "/airvalve.geojson", function (data) {
+  airvalves.addData(data);
+});
+
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
 
 map = L.map("map", {
   zoom: qzoom || 14,
@@ -589,6 +764,14 @@ map.on("overlayadd", function(e) {
     markerClusters.addLayer(valves);
     syncSidebar();
   }
+  if (e.layer === airvalveLayer) {
+    markerClusters.addLayer(airvalves);
+    syncSidebar();
+  }
+  if (e.layer === persilLayer) {
+    markerClusters.addLayer(persils);
+    syncSidebar();
+  }
 });
 
 map.on("overlayremove", function(e) {
@@ -606,6 +789,14 @@ map.on("overlayremove", function(e) {
   }
   if (e.layer === valveLayer) {
     markerClusters.removeLayer(valves);
+    syncSidebar();
+  }
+  if (e.layer === airvalveLayer) {
+    markerClusters.removeLayer(airvalves);
+    syncSidebar();
+  }
+  if (e.layer === persilLayer) {
+    markerClusters.removeLayer(persils);
     syncSidebar();
   }
 });
@@ -695,9 +886,12 @@ var groupedOverlays = {
     "<img src={% static 'img/marker-meter-blue.png' %} width='16' height='18'>&nbsp;Meter": meterLayer,
     "<img src={% static 'img/marker-pump-blue.png' %} width='16' height='18'>&nbsp;Pump": pumpLayer,
     "<img src={% static 'img/marker-valve-blue.png' %} width='16' height='18'>&nbsp;Valve": valveLayer,
+      "<img src={% static 'img/marker-valve-yellow.png' %} width='16' height='18'>&nbsp;AirValve": airvalveLayer,
+      //"<img src={% static 'img/marker-valve-blue.png' %} width='16' height='18'>&nbsp;Persil": persilLayer,
   },
   "Polygon": {
-    "Pipa": subwayLines
+    "Pipa": subwayLines,
+      "Persil" : persilLayer
   }
 };
 
