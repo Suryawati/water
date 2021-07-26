@@ -1,6 +1,8 @@
+
+
 {% load rest_framework %}
 
-<form action="" method="post">
+<form action="" method="post" >
     {% csrf_token %}
     {% if serializer %}
       {% render_form serializer %}
@@ -8,3 +10,4 @@
     <input id="save" type="submit" value="Save" />
     <input type="hidden" id="next" name="next">
 </form>
+

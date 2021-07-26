@@ -3,13 +3,16 @@ from rest_framework.renderers import TemplateHTMLRenderer, JSONRenderer
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import serializers, status
+from django.views.generic import UpdateView
+from django.contrib.auth.models import User
 
 from api.serializers import (PremiseSerializer,
                             ValveSerializer,
                              AirValveSerializer,
                              PipaSerializer,
                              PumpSerializer,
-                             PersilSerializer)
+                             PersilSerializer,
+                             MeterIndukSerializer)
 
 from water.models import (AirValve,
                           FireHydrant,
@@ -45,12 +48,14 @@ class BaseUpdate(APIView):
         serializer = self.asset_serializer(premise)
         return Response({'serializer': serializer, 'premise': premise})
 
+
     def post(self, request, pk):
         premise = get_object_or_404(self.model, pk=pk)
         serializer = self.asset_serializer(premise, data=request.data)
+        #request.data['modify_by'] = request.user
         if not serializer.is_valid():
             return Response({'serializer': serializer, 'premise': premise})
-        serializer.save()
+        serializer.save(modify_by=self.request.user.username)
         next = request.POST.get('next', '/')
         return redirect(next)
 
@@ -80,3 +85,12 @@ class PumpUpdate(BaseUpdate, UpdateMixin):
 class PersilUpdate(BaseUpdate, UpdateMixin):
     model = Persil
     asset_serializer = PersilSerializer
+
+    def update(self, instance, request):
+        instance.modify_by = request.user
+        instance.save()
+        return instance
+
+class MeterIndukUpdate(BaseUpdate, UpdateMixin):
+    model = MeterInduk
+    asset_serializer = MeterIndukSerializer

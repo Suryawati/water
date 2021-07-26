@@ -8,6 +8,9 @@ import json
 class HomePageView(LoginRequiredMixin, TemplateView):
     template_name = 'main_05200953.html'
 
+class UserProfileView(LoginRequiredMixin, TemplateView):
+    template_name = 'page-user.html'
+
 
 class DashboardView(LoginRequiredMixin, TemplateView):
     template_name = 'dashboard.html'

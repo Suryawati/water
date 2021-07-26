@@ -28,7 +28,7 @@ urlpatterns = [
 
     path('<lati>/<long>/<int:meter>/meterinduk.geojson', assets.MeterIndukLayer.as_view(
         model=MeterInduk,
-        properties=('id_meter_induk', 'location_geometry')
+        properties=('id', 'id_meter_induk', 'location_geometry')
     ), name='json-meterinduk'),
 
     path('kelurahan.geojson', assets.KelurahanLayer.as_view(
@@ -69,6 +69,7 @@ urlpatterns = [
     path('pipa/<int:pk>', updates.PipaUpdate.as_view(), name='update-pipa'),
     path('pump/<int:pk>', updates.PumpUpdate.as_view(), name='update-pump'),
     path('persil/<int:pk>', updates.PersilUpdate.as_view(), name='update-persil'),
+    path('meterinduk/<int:pk>', updates.MeterIndukUpdate.as_view(), name='update-meterinduk'),
 ]
 
 

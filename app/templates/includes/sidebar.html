@@ -23,18 +23,21 @@
             </a>
           </li>
           <li class="{% if 'page-user' in segment %} active {% endif %}">
-            <a href="/page-user.html">
+            <a href="{% url 'page-user' %}">
               <i class="tim-icons icon-single-02"></i>
               <p>User Profile</p>
             </a>
           </li>
+{#            <li class="nav-item">#}
+{#                <a class="nav-link" href="{% url 'page-user' %}">Profile</a>#}
+{#            </li>#}
           <!---<li class="{#{% if 'tables' in segment %}#} active {#{% endif %}#}">
             <a href="/ui-tables.html">
               <i class="tim-icons icon-puzzle-10"></i>
               <p>Table List</p>
             </a>
-          </li>
-          <li>----->
+          </li>----->
+          <li>
             <a href="{% url 'logout' %}" >
               <i class="tim-icons icon-user-run"></i>
               <p>Logout</p>

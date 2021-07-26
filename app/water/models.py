@@ -36,7 +36,7 @@ class AirValve(models.Model):
 
     # Tanggal
     tanggal_pasang = models.DateTimeField(null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
 
     modify_by = models.CharField(max_length=255, null=True)
     keterangan = models.CharField(max_length=255, null=True)
@@ -65,7 +65,7 @@ class Valve(models.Model):
     ukuran_valve = models.FloatField(null=True)
     jenis_valve = models.CharField(max_length=255, null=True)
     tanggal_pasang = models.DateTimeField(null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     modify_by = models.CharField(max_length=255, null=True)
     keterangan = models.CharField(max_length=255, null=True)
     chamber_structure = models.CharField(max_length=255, null=True)
@@ -87,7 +87,7 @@ class MeterInduk(models.Model):
     sys_id = models.IntegerField(null=True)
     merek_meter = models.CharField(max_length=255, null=True)
     diameter = models.FloatField(null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     elevasi = models.FloatField(null=True)
     ketr_lokasi = models.CharField(max_length=255, null=True)
     jenis_meter = models.CharField(max_length=255, null=True)
@@ -117,7 +117,7 @@ class Pump(models.Model):
     sys_id = models.IntegerField(null=True)
     kecepatan = models.IntegerField(null=True)
     kapasitas = models.FloatField(null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     tipe = models.CharField(max_length=255, null=True)
     serial = models.CharField(max_length=255, null=True)
     daya = models.IntegerField(null=True)
@@ -137,7 +137,7 @@ class PMP(models.Model):
     sys_id = models.IntegerField(null=True)
     alamat = models.CharField(max_length=255, null=True)
     install_date = models.DateTimeField(null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     flag = models.IntegerField(null=True)
     # GeoDjango-specific: a geometry field (PolygonField)
     geom = models.PointField(null=True)
@@ -149,7 +149,7 @@ class PMP(models.Model):
 class FireHydrant(models.Model):
     modify_date = models.DateTimeField(null=True)
     modify_by = models.CharField(max_length=255, null=True)
-    install_date = models.DateTimeField(null=True)
+    install_date = models.DateTimeField('date published',auto_now=True)
     sys_id = models.IntegerField(null=True)
     hydrant_size = models.FloatField(null=True)
     status = models.CharField(max_length=255, null=True)
@@ -170,7 +170,7 @@ class Pipa(models.Model):
     function = models.CharField(max_length=255, null=True)
     elevasi = models.FloatField(null=True)
     sys_id = models.IntegerField(null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     pelapisan_pipa = models.CharField(max_length=255, null=True)
     diameter_pipa = models.FloatField(null=True)
     id_pipa = models.CharField(max_length=255, null=True)
@@ -193,7 +193,7 @@ class Pipa(models.Model):
         return str(self.id)
 
 class Sipon(models.Model):
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     modify_by = models.CharField(max_length=255, null=True)
     sipon_name = models.CharField(max_length=255, null=True)
     length = models.FloatField(null=True)
@@ -215,7 +215,7 @@ class Washout(models.Model):
     jumlah_putaran = models.FloatField(null=True)
     tanggal_terpasang = models.DateTimeField(null=True)
     letak = models.CharField(max_length=255, null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     elevasi = models.FloatField(null=True)
     sys_id = models.IntegerField(null=True)
     id_washout = models.CharField(max_length=255, null=True)
@@ -237,7 +237,7 @@ class Washout(models.Model):
 
 
 class TitikBocor(models.Model):
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     tanggal_bocor = models.DateTimeField(null=True)
     modify_by = models.CharField(max_length=255, null=True)
     nama_obyek = models.CharField(max_length=255, null=True)
@@ -279,7 +279,7 @@ class Premise(models.Model):
     kode_lokasi = models.CharField(max_length=255, null=True)
     address3 = models.CharField(max_length=255, null=True)
     noreg = models.CharField(max_length=255, null=True)
-    modify_date = models.DateTimeField(null=True)
+    modify_date = models.DateTimeField('date published',auto_now=True)
     water_meter = models.CharField(max_length=255, null=True)
     remarks = models.CharField(max_length=255, null=True)
     """field baru dari mysql"""
@@ -291,7 +291,7 @@ class Premise(models.Model):
     dia_met = models.CharField(max_length=255, null=True)
     no_met = models.CharField(max_length=255, null=True)
     merk_met = models.CharField(max_length=255, null=True)
-    flag = models.IntegerField(null=True)
+    flag = models.IntegerField(default=0)
     saran = models.CharField(max_length=255, null=True)
     # GeoDjango-specific: a geometry field (PolygonField)
     geom = models.PointField(null=True)
@@ -299,3 +299,11 @@ class Premise(models.Model):
     # Returns the string representation of the model.
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.flag is None:
+            self.flag = 0
+        else :
+            self.flag = self.flag + 1
+
+        super().save(*args, **kwargs)  # Call the "real" save() method.

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+
 from water.models import (AirValve,
                           FireHydrant,
                           MeterInduk,
@@ -32,14 +33,24 @@ class ValveSerializer(serializers.ModelSerializer):
         fields = ['id_valve', 'status_koneksi']
 
 class PersilSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Persil
-        fields = ['nomor_pelanggan', 'nomor_persil', 'keterangan']
+        fields = ['nomor_pelanggan', 'nomor_persil', 'keterangan', 'modify_by']
+        #read_only_fields = ['modify_by']
+
+
+
 
 class PumpSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pump
         fields = ['id_pompa']
+
+class MeterIndukSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MeterInduk
+        fields = ['id_meter_induk']
 
 class PipaSerializer(serializers.ModelSerializer):
     class Meta:
