@@ -168,12 +168,36 @@ class PumpLayer(GeoJSONLayerView, LatLonRadMixin):
             geom__distance_lt=(point, Distance(m=meter_rad)))
         return context
 
+class FireHydrantLayer(GeoJSONLayerView, LatLonRadMixin):
+    def get_queryset(self, **kwargs):
+        point, meter_rad = self.get_lat_lon_rad(**kwargs)
+        context = FireHydrant.objects.filter(
+            geom__distance_lt=(point, Distance(m=meter_rad)))
+        return context
+
+class SiponLayer(GeoJSONLayerView, LatLonRadMixin):
+    def get_queryset(self, **kwargs):
+        point, meter_rad = self.get_lat_lon_rad(**kwargs)
+        context = Sipon.objects.filter(
+            geom__distance_lt=(point, Distance(m=meter_rad)))
+        return context
+
+class WashoutLayer(GeoJSONLayerView, LatLonRadMixin):
+    def get_queryset(self, **kwargs):
+        point, meter_rad = self.get_lat_lon_rad(**kwargs)
+        context = Washout.objects.filter(
+            geom__distance_lt=(point, Distance(m=meter_rad)))
+        return context
+
+
 class PipaLayer(GeoJSONLayerView, LatLonRadMixin):
     def get_queryset(self, **kwargs):
         point, meter_rad = self.get_lat_lon_rad(**kwargs)
         context = Pipa.objects.filter(
             geom__distance_lte=(point, Distance(m=meter_rad)))
         return context
+
+
 
 def ambil_data(request):
 
